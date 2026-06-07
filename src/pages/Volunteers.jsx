@@ -89,8 +89,9 @@ export default function Volunteers() {
   const getImageUrl = (path) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    return `http://127.0.0.1:8000/${path}`;
+    return `https://ex-igp-adamu-backend.onrender.com/${path}`;
   };
+
 
   const statCards = [
     { label: "Total", value: stats.total_volunteers, icon: Users, color: "from-emerald-600 to-emerald-400" },

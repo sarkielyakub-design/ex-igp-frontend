@@ -75,7 +75,7 @@ export default function VolunteerModal({
           >
             <div className="flex flex-col items-center">
               <img
-                src={`http://127.0.0.1:8000/${volunteer.passport}`}
+                src={`https://ex-igp-adamu-backend.onrender.com/${volunteer.passport}`}
                 alt={volunteer.name}
                 className="
                 w-40
@@ -229,7 +229,7 @@ export default function VolunteerModal({
             {/* Footer Buttons */}
             <div className="mt-8 flex gap-4">
               <a
-                href={`http://127.0.0.1:8000/api/volunteers/id-card/${volunteer.registration_no}`}
+                href={`https://ex-igp-adamu-backend.onrender.com/api/volunteers/id-card/${volunteer.registration_no}`}
                 target="_blank"
                 rel="noreferrer"
                 className="

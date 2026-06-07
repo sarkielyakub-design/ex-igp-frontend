@@ -56,7 +56,8 @@ export default function RegisterVolunteer() {
 
   // --- Success View ---
   if (result) {
-    const membershipCardUrl = `http://localhost:8000/uploads/cards/${result.id_card.split("/").pop()}`;
+    const membershipCardUrl =
+`https://ex-igp-adamu-backend.onrender.com/uploads/cards/${result.id_card.split("/").pop()}`
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-50 p-4">
