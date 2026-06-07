@@ -1,0 +1,400 @@
+/* ==================================================
+   EX-IGP ADAMU YOUTH VOLUNTEERS THEME
+================================================== */
+
+:root {
+  --primary: #006838;
+  --primary-dark: #004d2b;
+
+  --gold: #d4a017;
+  --gold-light: #f4d03f;
+
+  --white: #ffffff;
+
+  --bg: #f8fafc;
+  --border: #dbe5dd;
+
+  --text: #1f2937;
+  --text-light: #6b7280;
+
+  --shadow:
+    0 10px 30px rgba(0, 0, 0, 0.08);
+
+  --radius: 14px;
+}
+
+/* ==================================================
+   GLOBAL
+================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    Inter,
+    system-ui,
+    sans-serif;
+
+  color: var(--text);
+
+  background:
+    linear-gradient(
+      rgba(255,255,255,0.90),
+      rgba(255,255,255,0.90)
+    ),
+    url("/ex-igp-bg.jpg");
+
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  overflow-x: hidden;
+}
+
+/* ==================================================
+   TYPOGRAPHY
+================================================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ==================================================
+   FORM ELEMENTS
+================================================== */
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 12px 14px;
+
+  border: 1px solid #d6e4db;
+
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.95);
+
+  transition: all .25s ease;
+
+  font-size: 15px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+
+  border-color: var(--primary);
+
+  box-shadow:
+    0 0 0 4px rgba(0,104,56,.15);
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* ==================================================
+   BUTTONS
+================================================== */
+
+button {
+  cursor: pointer;
+  border: none;
+
+  transition: .3s;
+}
+
+.btn-primary {
+  background:
+    linear-gradient(
+      135deg,
+      var(--primary),
+      var(--primary-dark)
+    );
+
+  color: white;
+
+  border-radius: 12px;
+
+  padding: 14px 22px;
+
+  font-weight: 600;
+
+  box-shadow: var(--shadow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 12px 25px rgba(0,104,56,.25);
+}
+
+.btn-gold {
+  background:
+    linear-gradient(
+      135deg,
+      var(--gold),
+      #b8860b
+    );
+
+  color: white;
+}
+
+/* ==================================================
+   CARD
+================================================== */
+
+.card {
+  background: rgba(255,255,255,.96);
+
+  border-radius: 24px;
+
+  box-shadow: var(--shadow);
+
+  border: 1px solid rgba(255,255,255,.8);
+
+  backdrop-filter: blur(10px);
+}
+
+/* ==================================================
+   SECTION HEADERS
+================================================== */
+
+.section-title {
+  background:
+    linear-gradient(
+      90deg,
+      var(--primary),
+      var(--primary-dark)
+    );
+
+  color: white;
+
+  padding: 12px 20px;
+
+  border-radius: 12px;
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+  display: inline-block;
+
+  margin-bottom: 20px;
+}
+
+/* ==================================================
+   HEADER BANNER
+================================================== */
+
+.banner {
+  background:
+    linear-gradient(
+      135deg,
+      var(--primary-dark),
+      var(--primary)
+    );
+
+  color: white;
+
+  padding: 30px;
+
+  border-radius: 20px;
+
+  text-align: center;
+
+  box-shadow: var(--shadow);
+}
+
+.banner h1 {
+  color: white;
+  font-size: 42px;
+}
+
+.banner p {
+  color: rgba(255,255,255,.9);
+}
+
+/* ==================================================
+   COUNTER
+================================================== */
+
+.counter {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 8px 18px;
+
+  border-radius: 999px;
+
+  background: #ecfdf5;
+
+  color: var(--primary);
+
+  border: 1px solid #bbf7d0;
+
+  font-weight: 600;
+}
+
+.counter:hover {
+  box-shadow: var(--shadow);
+}
+
+/* ==================================================
+   NEXT STEPS
+================================================== */
+
+#next-steps {
+  display: flex;
+
+  background: white;
+
+  border-radius: 18px;
+
+  overflow: hidden;
+
+  box-shadow: var(--shadow);
+}
+
+#next-steps > div {
+  flex: 1;
+
+  padding: 30px;
+}
+
+#next-steps > div:hover {
+  background: #f9fafb;
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+}
+
+.icon {
+  color: var(--gold);
+
+  width: 26px;
+  height: 26px;
+}
+
+/* ==================================================
+   TICKS
+================================================== */
+
+.ticks {
+  width: 100%;
+  height: 1px;
+
+  background: var(--gold);
+
+  position: relative;
+}
+
+.ticks::before,
+.ticks::after {
+  content: "";
+
+  position: absolute;
+
+  top: -4px;
+
+  border: 5px solid transparent;
+}
+
+.ticks::before {
+  left: 0;
+  border-left-color: var(--gold);
+}
+
+.ticks::after {
+  right: 0;
+  border-right-color: var(--gold);
+}
+
+/* ==================================================
+   SCROLLBAR
+================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* ==================================================
+   SELECTION
+================================================== */
+
+::selection {
+  background: rgba(0,104,56,.2);
+}
+
+/* ==================================================
+   MOBILE
+================================================== */
+
+@media (max-width: 768px) {
+
+  .banner h1 {
+    font-size: 28px;
+  }
+
+  #next-steps {
+    flex-direction: column;
+  }
+
+  #docs {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+}
