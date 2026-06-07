@@ -7,8 +7,8 @@ import {
   Save,
 } from "lucide-react";
 
-import Sidebar from "../components/sidebar";
-import Navbar from "../components/navbar";
+import Sidebar from "../components/SideBar";
+import Navbar from "../components/NavBar";
 import api from "../services/api";
 
 export default function Profile() {

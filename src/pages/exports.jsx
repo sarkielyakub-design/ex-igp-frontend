@@ -1,5 +1,5 @@
 import Sidebar from "../components/sidebar";
-import Navbar from "../components/navbar";
+import Navbar from "../components/NavBar";
 
 import {
   FileSpreadsheet,

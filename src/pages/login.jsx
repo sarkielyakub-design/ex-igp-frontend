@@ -62,7 +62,7 @@ export default function Login() {
                 className="w-full h-full object-cover"
               />
             </div>
-            <h1 className="text-4xl font-bold text-white">EX-IGP</h1>
+            <h1 className="text-4xl font-bold text-white">EX-IGP ADAMU</h1>
             <p className="text-blue-100 mt-2">Volunteer Registration System</p>
 
             <div className="flex flex-wrap justify-center gap-2 mt-5">
