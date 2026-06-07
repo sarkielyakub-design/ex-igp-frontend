@@ -2,7 +2,7 @@ import api from "./Api";
 
 export const registerVolunteer = async (formData) => {
   const response = await api.post(
-    "/volunteers/register",
+    "/api/volunteers/register",
     formData,
     {
       headers: {
