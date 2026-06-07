@@ -12,8 +12,8 @@ import {
   Accessibility,
   Loader2,
 } from "lucide-react";
-import Sidebar from "../components/SideBar";
-import Navbar from "../components/NavBar";
+import Sidebar from "../components/sidebar";
+import Navbar from "../components/navbar";
 import api from "../services/Api";
 import exIgpBackground from "../assets/ex-igp-bg.jpg"; // adjust path if needed
 

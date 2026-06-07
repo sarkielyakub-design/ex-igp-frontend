@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2, Upload, CheckCircle, Download, Printer } from "lucide-react";
-import { registerVolunteer } from "../services/VolunteerApi";
+import { registerVolunteer } from "../services/volunteerapi";
 
 export default function RegisterVolunteer() {
   const [loading, setLoading] = useState(false);
