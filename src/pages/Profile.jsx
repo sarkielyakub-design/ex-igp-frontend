@@ -28,7 +28,7 @@ export default function Profile() {
   const loadProfile = async () => {
     try {
       const res = await api.get(
-        "/auth/me"
+        "/api/auth/me"
       );
 
       setProfile(res.data);
@@ -42,7 +42,7 @@ export default function Profile() {
     try {
 
       await api.put(
-        "/auth/change-password",
+        "/api/auth/change-password",
         {
           password,
         }

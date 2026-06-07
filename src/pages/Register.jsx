@@ -29,7 +29,7 @@ export default function Register() {
 
     try {
       const res = await api.post(
-        "/volunteers/register",
+        "/api/volunteers/register",
         data
       );
 

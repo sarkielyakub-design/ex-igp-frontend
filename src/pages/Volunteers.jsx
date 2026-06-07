@@ -41,8 +41,8 @@ export default function Volunteers() {
   const loadData = async () => {
     try {
       const [volRes, statRes] = await Promise.all([
-        api.get("/volunteers"),
-        api.get("/volunteers/stats/summary"),
+        api.get("/api/volunteers"),
+        api.get("/api/volunteers/stats/summary"),
       ]);
       const volData = volRes.data.data || [];
       setVolunteers(volData);

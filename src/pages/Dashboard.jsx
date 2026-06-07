@@ -45,9 +45,9 @@ export default function Dashboard() {
     try {
       // Use the dedicated recent endpoint instead of query params
       const [statsRes, recentRes, lgaRes] = await Promise.all([
-        api.get("/admin/dashboard"),
-        api.get("/admin/volunteers/recent"),   // ✅ new dedicated endpoint
-        api.get("/admin/analytics/lga"),
+        api.get("/api/admin/dashboard"),
+        api.get("/api/admin/volunteers/recent"),   // ✅ new dedicated endpoint
+        api.get("/api/admin/analytics/lga"),
       ]);
       setStats(statsRes.data);
       // /volunteers/recent returns a plain array, not { data: [...] }
