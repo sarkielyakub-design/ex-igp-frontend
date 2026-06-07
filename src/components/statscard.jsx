@@ -37,7 +37,7 @@ export default function StatsCard({
       p-6
       text-white
       shadow-lg
-      bg-gradient-to-r
+      bg-linear-to-r
       from-[#0B3D2E]
       to-[#14532D]
       hover:scale-105

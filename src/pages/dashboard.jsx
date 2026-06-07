@@ -243,7 +243,7 @@ export default function Dashboard() {
             </div>
 
             {/* Growth Card */}
-            <div className="bg-gradient-to-br from-green-800 to-green-600 rounded-2xl p-6 text-white shadow-lg">
+            <div className="bg-linear-to-br from-green-800 to-green-600 rounded-2xl p-6 text-white shadow-lg">
               <h2 className="text-xl font-bold">Volunteer Growth</h2>
               <div className="mt-6">
                 <span className="text-5xl font-black">{total}</span>

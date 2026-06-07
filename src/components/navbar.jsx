@@ -48,7 +48,7 @@ export default function Navbar() {
       </div>
       {/* CENTER SEARCH */}
       <div className="hidden lg:block">
-        <div className="relative w-[420px]">
+        <div className="relative w-105">
           <Search
             size={18}
             className="

@@ -38,7 +38,7 @@ export default function VolunteerModal({
         {/* Header */}
         <div
           className="
-          bg-gradient-to-r
+          bg-linear-to-r
           from-green-700
           to-green-600
           text-white

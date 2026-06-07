@@ -424,7 +424,7 @@ export default function RegisterVolunteer() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg text-lg"
+                  className="w-full py-4 bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg text-lg"
                 >
                   {loading ? (
                     <>
