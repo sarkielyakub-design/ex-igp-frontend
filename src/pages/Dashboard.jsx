@@ -25,9 +25,9 @@ import {
   Legend,
 } from "recharts";
 
-import Sidebar from "../components/sidebar";
-import Navbar from "../components/navbar";
-import StatsCard from "../components/statscard";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
+import StatsCard from "../components/StatsCard";
 import api from "../services/Api";
 import exIgpBg from "../assets/ex-igp-bg.jpg";
 
