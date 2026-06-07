@@ -9,7 +9,7 @@ import {
 
 import Sidebar from "../components/SideBar";
 import Navbar from "../components/NavBar";
-import api from "../services/api";
+import api from "../services/Api";
 
 export default function Profile() {
 

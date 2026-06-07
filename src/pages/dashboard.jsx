@@ -28,7 +28,7 @@ import {
 import Sidebar from "../components/SideBar";
 import Navbar from "../components/NavBar";
 import StatsCard from "../components/StatsCard";
-import api from "../services/api";
+import api from "../services/Api";
 import exIgpBg from "../assets/ex-igp-bg.jpg";
 
 export default function Dashboard() {

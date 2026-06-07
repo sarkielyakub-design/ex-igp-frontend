@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Sidebar from "../components/SideBar";
 import Navbar from "../components/NavBar";
-import api from "../services/api";
+import api from "../services/Api";
 import exIgpBackground from "../assets/ex-igp-bg.jpg"; // adjust path if needed
 
 export default function Volunteers() {

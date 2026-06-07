@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "./Api";
 
 export const registerVolunteer = async (formData) => {
   const response = await api.post(
