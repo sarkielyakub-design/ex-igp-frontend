@@ -292,7 +292,7 @@ export default function RegisterVolunteer() {
                 </h2>
                 <div className="grid md:grid-cols-2 gap-8">
                   <div>
-                    <label className={labelClasses}>Physically Challenged?</label>
+                    <label className={labelClasses}>Are You Physically Challenged?</label>
                     <div className="flex gap-6 mt-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -315,7 +315,7 @@ export default function RegisterVolunteer() {
                     </div>
                   </div>
                   <div>
-                    <label className={labelClasses}>Youth Organization Member?</label>
+                    <label className={labelClasses}>Are You a Member of any Youth Organization?</label>
                     <div className="flex gap-6 mt-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -419,6 +419,7 @@ export default function RegisterVolunteer() {
                     className="text-green-600 hover:underline font-semibold"
                   >
                     exigpadamuyouthvolunteers@gmail.com
+                    08038830497 08023000799 08061913134
                   </a>
                 </p>
 

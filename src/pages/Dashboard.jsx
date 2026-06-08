@@ -243,31 +243,31 @@ export default function Dashboard() {
             </div>
 
             {/* Growth Card */}
-            <div className="bg-linear-to-br from-green-800 to-green-600 rounded-2xl p-6 text-white shadow-lg">
-              <h2 className="text-xl font-bold">Volunteer Growth</h2>
-              <div className="mt-6">
-                <span className="text-5xl font-black">{total}</span>
-                <p className="text-green-100 mt-2">Active volunteers</p>
-              </div>
-              <div className="mt-8 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span>Youth Members</span>
-                  <span className="font-bold">{stats.youth_members || 0}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Physically Challenged</span>
-                  <span className="font-bold">{stats.physically_challenged || 0}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Employed</span>
-                  <span className="font-bold">{stats.employed || 0}</span>
-                </div>
-              </div>
-              <div className="mt-8 pt-6 border-t border-green-500">
-                <p className="text-green-100 text-sm">System Status</p>
-                <p className="font-bold text-lg">Online</p>
-              </div>
-            </div>
+<div className="bg-gradient-to-br from-green-800 to-green-600 rounded-2xl p-6 text-white shadow-lg">
+  <h2 className="text-xl font-bold">Volunteer Growth</h2>
+  <div className="mt-6">
+    <span className="text-5xl font-black">{total}</span>
+    <p className="text-green-100 mt-2">Active volunteers</p>
+  </div>
+  <div className="mt-8 space-y-3">
+    <div className="flex justify-between text-sm">
+      <span>Self Employed</span>
+      <span className="font-bold">{stats.self_employed || 0}</span>
+    </div>
+    <div className="flex justify-between text-sm">
+      <span>Unemployed</span>
+      <span className="font-bold">{stats.unemployed || 0}</span>
+    </div>
+    <div className="flex justify-between text-sm">
+      <span>Employed</span>
+      <span className="font-bold">{stats.employed || 0}</span>
+    </div>
+  </div>
+  <div className="mt-8 pt-6 border-t border-green-500">
+    <p className="text-green-100 text-sm">System Status</p>
+    <p className="font-bold text-lg">Online</p>
+  </div>
+</div>
           </div>
         </div>
       </div>
