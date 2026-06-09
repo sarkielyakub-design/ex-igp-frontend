@@ -11,11 +11,12 @@ import {
   Briefcase,
   Accessibility,
   Loader2,
+  FileText,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import api from "../services/Api";
-import exIgpBackground from "../assets/ex-igp-bg.jpg"; // adjust path if needed
+import exIgpBackground from "../assets/ex-igp-bg.jpg";
 
 export default function Volunteers() {
   const [volunteers, setVolunteers] = useState([]);
@@ -73,25 +74,60 @@ export default function Volunteers() {
     setShowModal(true);
   };
 
+  // ✅ Fixed delete endpoint
   const deleteVolunteer = async (id) => {
     if (!window.confirm("Are you sure you want to delete this volunteer?"))
       return;
     try {
-      await api.delete(`/volunteers/${id}`);
+      await api.delete(`/api/admin/volunteers/${id}`); // changed from /volunteers/${id}
       loadData();
+      setShowModal(false); // close modal after deletion if open
     } catch (error) {
       console.error(error);
       alert("Delete failed. Please try again.");
     }
   };
 
-  // Helper to get full image URL
   const getImageUrl = (path) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
     return `https://ex-igp-adamu-backend.onrender.com/${path}`;
   };
 
+  // 📄 Print volunteer details as PDF
+  const printVolunteerPDF = (volunteer) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const html = `
+      <html>
+        <head><title>${volunteer.name} Details</title></head>
+        <body style="font-family: Arial; padding: 30px;">
+          <h2>${volunteer.name}</h2>
+          <p><strong>Reg No:</strong> ${volunteer.registration_no}</p>
+          <p><strong>Phone:</strong> ${volunteer.phone}</p>
+          <p><strong>Gender:</strong> ${volunteer.gender}</p>
+          <p><strong>Age:</strong> ${volunteer.age}</p>
+          <p><strong>LGA:</strong> ${volunteer.lga}</p>
+          <p><strong>Ward:</strong> ${volunteer.ward}</p>
+          <p><strong>Unit:</strong> ${volunteer.unit}</p>
+          <p><strong>Qualification:</strong> ${volunteer.highest_qualification}</p>
+          <p><strong>Employment:</strong> ${volunteer.employment_status}</p>
+          ${volunteer.physically_challenged ? "<p>Physically Challenged: Yes</p>" : ""}
+          ${volunteer.organization_name ? `<p>Youth Org: ${volunteer.organization_name}</p>` : ""}
+          ${volunteer.position ? `<p>Position: ${volunteer.position}</p>` : ""}
+          ${volunteer.expectation ? `<p>Expectations: ${volunteer.expectation}</p>` : ""}
+          <div style="margin-top:20px;">
+            <img src="${getImageUrl(volunteer.passport_photo)}" style="max-width:150px; border-radius:10px;" />
+          </div>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.print();
+  };
 
   const statCards = [
     { label: "Total", value: stats.total_volunteers, icon: Users, color: "from-emerald-600 to-emerald-400" },
@@ -117,7 +153,6 @@ export default function Volunteers() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 relative overflow-hidden">
-        {/* Fullscreen background with overlay */}
         <div
           className="absolute inset-0 z-0 bg-cover bg-center bg-fixed"
           style={{ backgroundImage: `url(${exIgpBackground})` }}
@@ -176,7 +211,6 @@ export default function Volunteers() {
 
             {/* Search and Table */}
             <div className="bg-white/20 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/30 overflow-hidden">
-              {/* Search bar */}
               <div className="p-4 md:p-6 border-b border-white/20">
                 <div className="relative max-w-md">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/60 h-5 w-5" />
@@ -315,10 +349,10 @@ export default function Volunteers() {
           </div>
         </div>
 
-        {/* Volunteer Detail Modal */}
+        {/* 📱 Volunteer Detail Modal – scrollable, with PDF download & delete */}
         {showModal && selectedVolunteer && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-            <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-5xl p-6 md:p-8 relative border border-white/30">
+            <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-5xl p-6 md:p-8 relative border border-white/30 overflow-y-auto max-h-[90vh]">
               <button
                 onClick={() => setShowModal(false)}
                 className="absolute top-4 right-4 text-gray-700 hover:text-gray-900 bg-white/80 rounded-full p-1"
@@ -400,7 +434,7 @@ export default function Volunteers() {
                     </div>
                   )}
 
-                  <div className="mt-8 flex gap-3">
+                  <div className="mt-8 flex flex-wrap gap-3">
                     <a
                       href={getImageUrl(selectedVolunteer.id_card)}
                       download
@@ -409,10 +443,27 @@ export default function Volunteers() {
                       <Download className="h-5 w-5" /> Download Membership Card
                     </a>
                     <button
-                      onClick={() => window.open(getImageUrl(selectedVolunteer.id_card), "_blank")}
+                      onClick={() =>
+                        window.open(
+                          getImageUrl(selectedVolunteer.id_card),
+                          "_blank"
+                        )
+                      }
                       className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-xl transition shadow-md"
                     >
                       <Eye className="h-5 w-5" /> View Card
+                    </button>
+                    <button
+                      onClick={() => printVolunteerPDF(selectedVolunteer)}
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl transition shadow-md"
+                    >
+                      <FileText className="h-5 w-5" /> Download Details PDF
+                    </button>
+                    <button
+                      onClick={() => deleteVolunteer(selectedVolunteer.id)}
+                      className="flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl transition shadow-md"
+                    >
+                      <Trash2 className="h-5 w-5" /> Delete Volunteer
                     </button>
                   </div>
                 </div>
@@ -425,7 +476,6 @@ export default function Volunteers() {
   );
 }
 
-// Reusable detail component
 function DetailItem({ label, value }) {
   return (
     <div className="bg-gray-50 p-3 rounded-xl">
