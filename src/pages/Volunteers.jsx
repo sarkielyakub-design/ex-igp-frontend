@@ -75,18 +75,36 @@ export default function Volunteers() {
   };
 
   // ✅ Fixed delete endpoint
-  const deleteVolunteer = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this volunteer?"))
-      return;
-    try {
-      await api.delete(`/api/admin/volunteers/${id}`); // changed from /volunteers/${id}
-      loadData();
-      setShowModal(false); // close modal after deletion if open
-    } catch (error) {
-      console.error(error);
-      alert("Delete failed. Please try again.");
-    }
-  };
+ const deleteVolunteer = async (id) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this volunteer?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await api.delete(`/api/admin/volunteer/${id}`);
+
+    setVolunteers((prev) =>
+      prev.filter((v) => v.id !== id)
+    );
+
+    setFilteredVolunteers((prev) =>
+      prev.filter((v) => v.id !== id)
+    );
+
+    setShowModal(false);
+
+    alert("Volunteer deleted successfully");
+  } catch (error) {
+    console.error("Delete error:", error);
+
+    alert(
+      error?.response?.data?.detail ||
+      "Failed to delete volunteer"
+    );
+  }
+};
 
   const getImageUrl = (path) => {
     if (!path) return "";
