@@ -74,7 +74,7 @@ export default function Dashboard() {
   const getImageUrl = (path) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-   return `https://ex-igp-adamu-backend.onrender.com/${path}`;
+   return `https://ex-igp-adamu-backend-production.up.railway.app/${path}`;
   };
 
   if (loading) {
