@@ -225,7 +225,7 @@ export default function Dashboard() {
                         <tr key={v.id} className="hover:bg-white/60 transition">
                           <td className="p-3">
                             <img
-                              src={getImageUrl(v.passport_photo)}
+                              src={getImageUrl(v.passport)}
                               alt=""
                               className="w-8 h-8 rounded-full object-cover border border-gray-200"
                             />

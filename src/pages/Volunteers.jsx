@@ -40,22 +40,25 @@ export default function Volunteers() {
   }, []);
 
   const loadData = async () => {
-    try {
-      const [volRes, statRes] = await Promise.all([
-        api.get("/api/volunteers"),
-        api.get("/api/volunteers/stats/summary"),
-      ]);
-      const volData = volRes.data.data || [];
-      setVolunteers(volData);
-      setFilteredVolunteers(volData);
-      if (statRes.data) setStats(statRes.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const [volRes, statRes] = await Promise.all([
+      api.get("/api/volunteers/"),
+      api.get("/api/volunteers/stats/summary"),
+    ]);
 
+    console.log("Volunteers:", volRes.data);
+    console.log("Stats:", statRes.data);
+
+    setVolunteers(volRes.data.data);
+    setFilteredVolunteers(volRes.data.data);
+    setStats(statRes.data);
+
+  } catch (error) {
+    console.error(error.response?.data || error);
+  } finally {
+    setLoading(false);
+  }
+};
   const handleSearch = (value) => {
     setSearch(value);
     const keyword = value.toLowerCase();
@@ -270,7 +273,7 @@ export default function Volunteers() {
                         >
                           <td className="p-4">
                             <img
-                              src={getImageUrl(v.passport_photo)}
+                              src={getImageUrl(v.passport)}
                               alt=""
                               className="w-10 h-10 rounded-full object-cover border-2 border-white/30"
                             />
@@ -328,7 +331,7 @@ export default function Volunteers() {
                     >
                       <div className="flex gap-4 items-center">
                         <img
-                          src={getImageUrl(v.passport_photo)}
+                          src={getImageUrl(v.passport)}
                           alt=""
                           className="w-14 h-14 rounded-full object-cover border-2 border-white/30"
                         />
@@ -382,7 +385,7 @@ export default function Volunteers() {
                 {/* Photo + QR */}
                 <div className="shrink-0 flex flex-col items-center">
                   <img
-                    src={getImageUrl(selectedVolunteer.passport_photo)}
+                    src={getImageUrl(selectedVolunteer.passport)}
                     alt=""
                     className="w-40 h-40 md:w-52 md:h-52 rounded-3xl object-cover border-4 border-green-200 shadow-lg"
                   />
