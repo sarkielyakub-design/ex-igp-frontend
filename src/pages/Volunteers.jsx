@@ -207,9 +207,31 @@ export default function Volunteers() {
 
       const volunteerData = Array.isArray(volRes.data)
         ? volRes.data
-        : volRes.data?.data || [];
+        : Array.isArray(volRes.data?.data)
+        ? volRes.data.data
+        : Array.isArray(volRes.data?.volunteers)
+        ? volRes.data.volunteers
+        : [];
 
-      setVolunteers(volunteerData);
+      // Normalize API variants without changing the stored records.
+      const normalizedVolunteers = volunteerData.map((v) => ({
+        ...v,
+        passport:
+          v?.passport_url ||
+          v?.passport ||
+          null,
+        qr_code:
+          v?.qr_code_url ||
+          v?.qr_code ||
+          null,
+        id_card:
+          v?.id_card_url ||
+          v?.membership_card_download_url ||
+          v?.id_card ||
+          null,
+      }));
+
+      setVolunteers(normalizedVolunteers);
       setStats(
         statRes.data || {
           total_volunteers: volunteerData.length,
@@ -414,7 +436,8 @@ export default function Volunteers() {
           (pu) =>
             String(pu.id || "") ===
               String(pollingUnitFilter) ||
-            pu.name === pollingUnitFilter
+            String(pu.name || "").toLowerCase() ===
+              String(pollingUnitFilter).toLowerCase()
         );
 
       const matchesPollingUnit =
@@ -526,72 +549,262 @@ export default function Volunteers() {
   // Convert every local upload path into the public /uploads/ URL.
   // =========================================================
 
+  // =========================================================
+  // PUBLIC MEDIA URL HELPERS
+  // =========================================================
+  // The backend may return:
+  //   - https://.../uploads/...
+  //   - /uploads/...
+  //   - uploads/...
+  //   - /app/app/uploads/...
+  //   - app/app/uploads/...
+  //
+  // The browser must always receive a public backend URL.
+  // =========================================================
+
   const getImageUrl = (path) => {
     if (!path) return "";
 
     const rawPath = String(path).trim();
+    if (!rawPath) return "";
 
-    // Already a complete public URL.
-    if (
-      rawPath.startsWith("http://") ||
-      rawPath.startsWith("https://")
-    ) {
+    // Already a public URL.
+    if (/^https?:\/\//i.test(rawPath)) {
       return rawPath;
     }
 
-    // Remove any backend filesystem prefix and normalize slashes.
-    const normalizedPath = rawPath.replace(/\\/g, "/");
+    const normalized = rawPath.replace(/\\\\/g, "/");
 
-    // If the backend returned a filesystem path containing
-    // /uploads/, keep only the public portion.
-    const uploadsIndex = normalizedPath.indexOf("/uploads/");
-
+    // Keep only the public /uploads/... part when a filesystem
+    // path such as /app/app/uploads/... is returned.
+    const uploadsIndex = normalized.toLowerCase().indexOf("/uploads/");
     if (uploadsIndex !== -1) {
-      return `${API_BASE_URL}${normalizedPath.substring(
-        uploadsIndex
+      return `${API_BASE_URL}${normalized.substring(uploadsIndex)}`;
+    }
+
+    if (normalized.toLowerCase().startsWith("uploads/")) {
+      return `${API_BASE_URL}/${normalized}`;
+    }
+
+    if (normalized.toLowerCase().startsWith("/uploads/")) {
+      return `${API_BASE_URL}${normalized}`;
+    }
+
+    // Some API versions may return a complete backend-relative
+    // endpoint rather than an upload path.
+    if (normalized.startsWith("/api/")) {
+      return `${API_BASE_URL}${normalized}`;
+    }
+
+    return `${API_BASE_URL}/${normalized.replace(/^\/+/, "")}`;
+  };
+
+  const getPassportUrl = (volunteer) =>
+    getImageUrl(
+      volunteer?.passport_url ||
+      volunteer?.passport ||
+      ""
+    );
+
+  const getQrUrl = (volunteer) =>
+    getImageUrl(
+      volunteer?.qr_code_url ||
+      volunteer?.qr_code ||
+      ""
+    );
+
+  // =========================================================
+  // MEMBERSHIP CARD
+  // =========================================================
+  // Prefer the explicit card URL returned by the backend.
+  // Otherwise use the stored id_card path.
+  // If there is no stored path, use the reliable backend
+  // regeneration/download endpoint based on registration_no.
+  // =========================================================
+
+  const getMembershipCardUrl = (volunteerOrPath) => {
+    const volunteer =
+      volunteerOrPath &&
+      typeof volunteerOrPath === "object"
+        ? volunteerOrPath
+        : null;
+
+    const path = volunteer
+      ? (
+          volunteer.id_card_url ||
+          volunteer.membership_card_download_url ||
+          volunteer.id_card ||
+          ""
+        )
+      : volunteerOrPath;
+
+    if (path) {
+      const rawPath = String(path).trim();
+
+      if (/^https?:\/\//i.test(rawPath)) {
+        return rawPath;
+      }
+
+      const normalized = rawPath.replace(/\\\\/g, "/");
+      const uploadsIndex = normalized.toLowerCase().indexOf("/uploads/");
+
+      if (uploadsIndex !== -1) {
+        return `${API_BASE_URL}${normalized.substring(uploadsIndex)}`;
+      }
+
+      if (normalized.toLowerCase().startsWith("uploads/")) {
+        return `${API_BASE_URL}/${normalized}`;
+      }
+
+      if (normalized.toLowerCase().startsWith("/uploads/")) {
+        return `${API_BASE_URL}${normalized}`;
+      }
+    }
+
+    const registrationNo =
+      volunteer?.registration_no ||
+      "";
+
+    if (registrationNo) {
+      return `${API_BASE_URL}/api/volunteers/membership-card/${encodeURIComponent(
+        registrationNo
       )}`;
     }
 
-    // If it is already a relative uploads path.
-    if (normalizedPath.startsWith("uploads/")) {
-      return `${API_BASE_URL}/${normalizedPath}`;
-    }
-
-    if (normalizedPath.startsWith("/uploads/")) {
-      return `${API_BASE_URL}${normalizedPath}`;
-    }
-
-    // Fallback for other relative paths.
-    return `${API_BASE_URL}/${normalizedPath.replace(/^\/+/, "")}`;
+    return "";
   };
 
-  // =========================================================
-  // MEMBERSHIP CARD URL
-  // =========================================================
-  // Always expose membership cards through the public static
-  // route, regardless of the filesystem path returned by backend.
-  // =========================================================
+  const downloadMembershipCard = async (volunteer) => {
+    const registrationNo = volunteer?.registration_no;
 
-  const getMembershipCardUrl = (path) => {
-    if (!path) return "";
-
-    const rawPath = String(path).trim();
-
-    if (
-      rawPath.startsWith("http://") ||
-      rawPath.startsWith("https://")
-    ) {
-      return rawPath;
+    if (!registrationNo) {
+      alert("This volunteer has no registration number.");
+      return;
     }
 
-    const normalizedPath = rawPath.replace(/\\/g, "/");
-    const filename = normalizedPath.split("/").pop();
+    const url = getMembershipCardUrl(volunteer);
 
-    if (!filename) return "";
+    if (!url) {
+      alert("Membership card URL could not be created.");
+      return;
+    }
 
-    return `${API_BASE_URL}/uploads/cards/${encodeURIComponent(
-      filename
-    )}`;
+    try {
+      // The API membership-card endpoint regenerates a missing card.
+      // Use fetch for the API endpoint so the browser downloads the
+      // actual PDF rather than navigating to an HTML error page.
+      if (url.includes("/api/volunteers/membership-card/")) {
+        const response = await api.get(
+          `/api/volunteers/membership-card/${encodeURIComponent(
+            registrationNo
+          )}`,
+          { responseType: "blob" }
+        );
+
+        const blob = new Blob(
+          [response.data],
+          { type: "application/pdf" }
+        );
+
+        const blobUrl = window.URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = blobUrl;
+        anchor.download =
+          `${registrationNo}-membership-card.pdf`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        return;
+      }
+
+      // For a directly hosted PDF, let the browser download it.
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download =
+        `${registrationNo}-membership-card.pdf`;
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    } catch (error) {
+      console.error(
+        "Membership card download error:",
+        error?.response?.data || error
+      );
+
+      // Last fallback: open the backend endpoint directly.
+      const fallbackUrl =
+        `${API_BASE_URL}/api/volunteers/membership-card/${encodeURIComponent(
+          registrationNo
+        )}`;
+
+      window.open(
+        fallbackUrl,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }
+  };
+
+  const viewMembershipCard = (volunteer) => {
+    const registrationNo = volunteer?.registration_no;
+    if (!registrationNo) {
+      alert("This volunteer has no registration number.");
+      return;
+    }
+
+    const url = getMembershipCardUrl(volunteer);
+
+    if (url.includes("/api/volunteers/membership-card/")) {
+      window.open(
+        url,
+        "_blank",
+        "noopener,noreferrer"
+      );
+      return;
+    }
+
+    if (url) {
+      window.open(
+        url,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    } else {
+      alert("Membership card is not available.");
+    }
+  };
+
+  const VolunteerPhoto = ({
+    volunteer,
+    className,
+    alt = "Volunteer passport",
+  }) => {
+    const [failed, setFailed] = useState(false);
+    const url = getPassportUrl(volunteer);
+
+    if (!url || failed) {
+      return (
+        <div
+          className={`${className || ""} flex items-center justify-center bg-gray-200 text-gray-500`}
+          title="Passport image unavailable"
+        >
+          <Users className="h-6 w-6 opacity-50" />
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={url}
+        alt={alt}
+        className={className}
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    );
   };
 
   /*
@@ -911,14 +1124,16 @@ export default function Volunteers() {
               : ""
           }
 
-          <div>
-            <img
-              src="${getImageUrl(
-                volunteer.passport
-              )}"
-              alt="Volunteer Passport"
-            />
-          </div>
+          ${
+            getPassportUrl(volunteer)
+              ? `<div>
+                   <img
+                     src="${getPassportUrl(volunteer)}"
+                     alt="Volunteer Passport"
+                   />
+                 </div>`
+              : `<p><strong>Passport:</strong> Not available</p>`
+          }
 
         </body>
       </html>
@@ -1466,12 +1681,10 @@ export default function Volunteers() {
 
                             <td className="p-4">
 
-                              <img
-                                src={getImageUrl(
-                                  v.passport
-                                )}
-                                alt=""
+                              <VolunteerPhoto
+                                volunteer={v}
                                 className="w-10 h-10 rounded-full object-cover border-2 border-white/30"
+                                alt={`${v.name || "Volunteer"} passport`}
                               />
 
                             </td>
@@ -1604,18 +1817,18 @@ export default function Volunteers() {
 
                                 </button>
 
-                                <a
-                                  href={getMembershipCardUrl(
-                                    v.id_card
-                                  )}
-                                  download
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    downloadMembershipCard(v)
+                                  }
                                   className="p-2 rounded-lg bg-emerald-600/80 hover:bg-emerald-700 text-white transition"
                                   title="Download membership card"
                                 >
 
                                   <Download className="h-4 w-4" />
 
-                                </a>
+                                </button>
 
                                 <button
                                   onClick={() =>
@@ -1678,12 +1891,10 @@ export default function Volunteers() {
 
                         <div className="flex gap-4 items-start">
 
-                          <img
-                            src={getImageUrl(
-                              v.passport
-                            )}
-                            alt=""
+                          <VolunteerPhoto
+                            volunteer={v}
                             className="w-14 h-14 rounded-full object-cover border-2 border-white/30"
+                            alt={`${v.name || "Volunteer"} passport`}
                           />
 
                           <div className="flex-1 min-w-0">
@@ -1803,11 +2014,11 @@ export default function Volunteers() {
 
                           </button>
 
-                          <a
-                            href={getMembershipCardUrl(
-                              v.id_card
-                            )}
-                            download
+                          <button
+                            type="button"
+                            onClick={() =>
+                              downloadMembershipCard(v)
+                            }
                             className="flex-1 bg-emerald-600/80 hover:bg-emerald-700 text-white py-2 rounded-lg text-sm text-center transition"
                           >
 
@@ -1815,7 +2026,7 @@ export default function Volunteers() {
 
                             Card
 
-                          </a>
+                          </button>
 
                           <button
                             onClick={() =>
@@ -1881,24 +2092,24 @@ export default function Volunteers() {
 
                   <div className="shrink-0 flex flex-col items-center">
 
-                    <img
-                      src={getImageUrl(
-                        selectedVolunteer.passport
-                      )}
-                      alt=""
+                    <VolunteerPhoto
+                      volunteer={selectedVolunteer}
                       className="w-40 h-40 md:w-52 md:h-52 rounded-3xl object-cover border-4 border-green-200 shadow-lg"
+                      alt={`${selectedVolunteer.name || "Volunteer"} passport`}
                     />
 
-                    {selectedVolunteer.qr_code && (
+                    {(selectedVolunteer.qr_code_url ||
+                      selectedVolunteer.qr_code) && (
 
                       <div className="mt-4 p-2 bg-white rounded-xl shadow">
 
                         <img
-                          src={getImageUrl(
-                            selectedVolunteer.qr_code
-                          )}
+                          src={getQrUrl(selectedVolunteer)}
                           alt="QR"
                           className="w-24 h-24"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none";
+                          }}
                         />
 
                         <p className="text-xs text-center mt-1 text-gray-500">
@@ -2209,47 +2420,39 @@ export default function Volunteers() {
 
                       {/* Download card */}
 
-                      {selectedVolunteer.id_card && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadMembershipCard(
+                            selectedVolunteer
+                          )
+                        }
+                        className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white px-5 py-2.5 rounded-xl transition shadow-md"
+                      >
 
-                        <a
-                          href={getMembershipCardUrl(
-                            selectedVolunteer.id_card
-                          )}
-                          download
-                          className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white px-5 py-2.5 rounded-xl transition shadow-md"
-                        >
+                        <Download className="h-5 w-5" />
 
-                          <Download className="h-5 w-5" />
+                        Download Membership Card
 
-                          Download Membership Card
-
-                        </a>
-
-                      )}
+                      </button>
 
                       {/* View card */}
 
-                      {selectedVolunteer.id_card && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          viewMembershipCard(
+                            selectedVolunteer
+                          )
+                        }
+                        className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-xl transition shadow-md"
+                      >
 
-                        <button
-                          onClick={() =>
-                            window.open(
-                              getMembershipCardUrl(
-                                selectedVolunteer.id_card
-                              ),
-                              "_blank"
-                            )
-                          }
-                          className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-xl transition shadow-md"
-                        >
+                        <Eye className="h-5 w-5" />
 
-                          <Eye className="h-5 w-5" />
+                        View Card
 
-                          View Card
-
-                        </button>
-
-                      )}
+                      </button>
 
                       {/* PDF */}
 

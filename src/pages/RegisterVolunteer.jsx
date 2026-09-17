@@ -540,11 +540,30 @@ export default function RegisterVolunteer() {
   // =========================================================
 
   if (result) {
-    const membershipCardUrl = result?.id_card
-      ? `${API_BASE_URL}/uploads/cards/${result.id_card
-          .split("/")
-          .pop()}`
-      : "";
+    // =========================================================
+    // MEMBERSHIP CARD URL
+    // =========================================================
+    // The backend may return a filesystem path such as:
+    // /app/app/uploads/cards/file.pdf
+    //
+    // The browser must never request that filesystem path.
+    // Always convert it to the public /uploads/cards URL.
+    // =========================================================
+
+    const getMembershipCardUrl = (idCard) => {
+      if (!idCard) return "";
+
+      const rawPath = String(idCard).trim();
+
+      // Extract only the filename. Supports both / and \\ paths.
+      const filename = rawPath.split(/[\\/]/).pop();
+
+      if (!filename) return "";
+
+      return `${API_BASE_URL}/uploads/cards/${encodeURIComponent(filename)}`;
+    };
+
+    const membershipCardUrl = getMembershipCardUrl(result?.id_card);
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-50 p-4">
