@@ -17,12 +17,14 @@ const API_BASE_URL =
 export default function RegisterVolunteer() {
   const [loading, setLoading] = useState(false);
 
-  // Location loading states
+  // =========================================================
+  // LOCATION STATE
+  // =========================================================
+
   const [loadingLGAs, setLoadingLGAs] = useState(false);
   const [loadingWards, setLoadingWards] = useState(false);
   const [loadingPollingUnits, setLoadingPollingUnits] = useState(false);
 
-  // Official Nasarawa location data
   const [lgas, setLgas] = useState([]);
   const [wards, setWards] = useState([]);
   const [pollingUnits, setPollingUnits] = useState([]);
@@ -35,6 +37,10 @@ export default function RegisterVolunteer() {
     useState(null);
 
   const [locationError, setLocationError] = useState("");
+
+  // =========================================================
+  // FORM STATE
+  // =========================================================
 
   const [form, setForm] = useState({
     name: "",
@@ -59,11 +65,10 @@ export default function RegisterVolunteer() {
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
 
-  /*
-   * ---------------------------------------------------------
-   * Generic API helper
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // GENERIC API HELPER
+  // =========================================================
+
   const fetchAPI = async (endpoint) => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`);
 
@@ -86,36 +91,56 @@ export default function RegisterVolunteer() {
     return data;
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Load LGAs
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // LOAD LGAs
+  // =========================================================
+
   const loadLGAs = async () => {
     setLoadingLGAs(true);
     setLocationError("");
 
     try {
-      const data = await fetchAPI("/api/polling-units/lgas");
+      const response = await fetchAPI("/api/polling-units/lgas");
+
+      console.log("LGA API response:", response);
 
       /*
-       * Supports either:
-       *
-       * [
-       *   { lga_code, lga_name }
-       * ]
-       *
-       * or:
+       * Backend currently returns:
        *
        * {
-       *   lgas: [...]
+       *   count: 13,
+       *   data: [
+       *     {
+       *       lga_code: "01",
+       *       lga_name: "AKWANGA",
+       *       ...
+       *     }
+       *   ]
        * }
+       *
+       * Support this format as well as a plain array.
        */
-      const lgaList = Array.isArray(data) ? data : data?.lgas || [];
+
+      const lgaList = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.lgas)
+        ? response.lgas
+        : [];
+
+      console.log("Parsed LGAs:", lgaList);
 
       setLgas(lgaList);
+
+      if (lgaList.length === 0) {
+        setLocationError("No LGAs were returned by the server.");
+      }
     } catch (error) {
       console.error("Failed to load LGAs:", error);
+
+      setLgas([]);
+
       setLocationError(
         "Unable to load LGAs. Please check your internet connection and try again."
       );
@@ -124,11 +149,10 @@ export default function RegisterVolunteer() {
     }
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Load wards after LGA selection
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // LOAD WARDS
+  // =========================================================
+
   const loadWards = async (lgaCode) => {
     if (!lgaCode) {
       setWards([]);
@@ -139,29 +163,42 @@ export default function RegisterVolunteer() {
     setLocationError("");
 
     try {
-      const data = await fetchAPI(
+      const response = await fetchAPI(
         `/api/polling-units/wards?lga_code=${encodeURIComponent(lgaCode)}`
       );
 
+      console.log("Ward API response:", response);
+
       /*
-       * Supports either:
-       *
-       * [
-       *   { ward_code, ward_name }
-       * ]
-       *
-       * or:
+       * Backend returns:
        *
        * {
-       *   wards: [...]
+       *   lga_code: "01",
+       *   count: 11,
+       *   data: [...]
        * }
        */
-      const wardList = Array.isArray(data) ? data : data?.wards || [];
+
+      const wardList = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.wards)
+        ? response.wards
+        : [];
+
+      console.log("Parsed wards:", wardList);
 
       setWards(wardList);
+
+      if (wardList.length === 0) {
+        setLocationError("No wards were found for the selected LGA.");
+      }
     } catch (error) {
       console.error("Failed to load wards:", error);
+
       setWards([]);
+
       setLocationError(
         "Unable to load wards for the selected LGA. Please try again."
       );
@@ -170,11 +207,10 @@ export default function RegisterVolunteer() {
     }
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Load polling units after Ward selection
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // LOAD POLLING UNITS
+  // =========================================================
+
   const loadPollingUnits = async (lgaCode, wardCode) => {
     if (!lgaCode || !wardCode) {
       setPollingUnits([]);
@@ -185,39 +221,47 @@ export default function RegisterVolunteer() {
     setLocationError("");
 
     try {
-      const data = await fetchAPI(
+      const response = await fetchAPI(
         `/api/polling-units?lga_code=${encodeURIComponent(
           lgaCode
         )}&ward_code=${encodeURIComponent(wardCode)}`
       );
 
+      console.log("Polling Unit API response:", response);
+
       /*
-       * Supports either:
-       *
-       * [
-       *   {...}
-       * ]
-       *
-       * or:
+       * Backend returns:
        *
        * {
-       *   polling_units: [...]
-       * }
-       *
-       * or:
-       *
-       * {
-       *   items: [...]
+       *   count: 12,
+       *   data: [...]
        * }
        */
-      const unitList = Array.isArray(data)
-        ? data
-        : data?.polling_units || data?.items || [];
+
+      const unitList = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.polling_units)
+        ? response.polling_units
+        : Array.isArray(response?.items)
+        ? response.items
+        : [];
+
+      console.log("Parsed polling units:", unitList);
 
       setPollingUnits(unitList);
+
+      if (unitList.length === 0) {
+        setLocationError(
+          "No polling units were found for the selected ward."
+        );
+      }
     } catch (error) {
       console.error("Failed to load polling units:", error);
+
       setPollingUnits([]);
+
       setLocationError(
         "Unable to load polling units for the selected ward. Please try again."
       );
@@ -226,42 +270,42 @@ export default function RegisterVolunteer() {
     }
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Initial location load
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // INITIAL LOCATION LOAD
+  // =========================================================
+
   useEffect(() => {
     loadLGAs();
   }, []);
 
-  /*
-   * ---------------------------------------------------------
-   * LGA change
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // LGA CHANGE
+  // =========================================================
+
   const handleLgaChange = async (e) => {
     const lgaCode = e.target.value;
 
     setSelectedLga(lgaCode);
 
-    // Reset children
+    // Reset dependent selections
     setSelectedWard("");
     setSelectedPollingUnit("");
+
     setWards([]);
     setPollingUnits([]);
+
     setSelectedPollingUnitData(null);
+    setLocationError("");
 
     if (lgaCode) {
       await loadWards(lgaCode);
     }
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Ward change
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // WARD CHANGE
+  // =========================================================
+
   const handleWardChange = async (e) => {
     const wardCode = e.target.value;
 
@@ -271,17 +315,17 @@ export default function RegisterVolunteer() {
     setSelectedPollingUnit("");
     setPollingUnits([]);
     setSelectedPollingUnitData(null);
+    setLocationError("");
 
     if (wardCode && selectedLga) {
       await loadPollingUnits(selectedLga, wardCode);
     }
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Polling Unit change
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // POLLING UNIT CHANGE
+  // =========================================================
+
   const handlePollingUnitChange = (e) => {
     const pollingUnitId = e.target.value;
 
@@ -294,11 +338,10 @@ export default function RegisterVolunteer() {
     setSelectedPollingUnitData(unit || null);
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Form changes
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // FORM CHANGE
+  // =========================================================
+
   const handleChange = (e) => {
     const { name, value, checked, type } = e.target;
 
@@ -308,11 +351,10 @@ export default function RegisterVolunteer() {
     }));
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Passport
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // PASSPORT
+  // =========================================================
+
   const handlePassport = (e) => {
     const file = e.target.files?.[0];
 
@@ -326,11 +368,10 @@ export default function RegisterVolunteer() {
     setPreview(URL.createObjectURL(file));
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Submit
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // SUBMIT
+  // =========================================================
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -369,50 +410,56 @@ export default function RegisterVolunteer() {
     try {
       const data = new FormData();
 
-      /*
-       * Personal information
-       */
+      // =====================================================
+      // PERSONAL INFORMATION
+      // =====================================================
+
       data.append("name", form.name);
       data.append("phone", form.phone);
       data.append("gender", form.gender);
       data.append("age", form.age);
 
-      /*
-       * IMPORTANT:
-       *
-       * We DO NOT submit:
-       *
-       * lga
-       * ward
-       * unit
-       *
-       * anymore.
-       *
-       * The backend derives these values from polling_unit_id.
-       */
+      // =====================================================
+      // LOCATION
+      //
+      // Only send polling_unit_id.
+      // Backend derives:
+      // LGA
+      // Ward
+      // Polling Unit
+      // =====================================================
+
       data.append("polling_unit_id", selectedPollingUnit);
 
-      /*
-       * Education
-       */
+      // =====================================================
+      // EDUCATION
+      // =====================================================
+
       data.append(
         "highest_qualification",
         form.highest_qualification
       );
+
       data.append(
         "additional_qualification",
         form.additional_qualification
       );
+
       data.append("specialization", form.specialization);
 
-      /*
-       * Employment
-       */
-      data.append("employment_status", form.employment_status);
+      // =====================================================
+      // EMPLOYMENT
+      // =====================================================
 
-      /*
-       * Additional information
-       */
+      data.append(
+        "employment_status",
+        form.employment_status
+      );
+
+      // =====================================================
+      // ADDITIONAL INFORMATION
+      // =====================================================
+
       data.append(
         "physically_challenged",
         String(form.physically_challenged)
@@ -423,18 +470,32 @@ export default function RegisterVolunteer() {
         String(form.youth_org_member)
       );
 
-      data.append("organization_name", form.organization_name);
-      data.append("position", form.position);
-      data.append("expectation", form.expectation);
+      data.append(
+        "organization_name",
+        form.organization_name
+      );
 
-      /*
-       * Passport
-       */
+      data.append(
+        "position",
+        form.position
+      );
+
+      data.append(
+        "expectation",
+        form.expectation
+      );
+
+      // =====================================================
+      // PASSPORT
+      // =====================================================
+
       data.append("passport", passport);
 
-      const res = await registerVolunteer(data);
+      const response = await registerVolunteer(data);
 
-      setResult(res);
+      console.log("Registration response:", response);
+
+      setResult(response);
 
       // Scroll to top so success screen is immediately visible.
       window.scrollTo({
@@ -444,9 +505,6 @@ export default function RegisterVolunteer() {
     } catch (error) {
       console.error("Registration failed:", error);
 
-      /*
-       * Try to extract a useful backend error.
-       */
       const message =
         error?.response?.data?.detail ||
         error?.response?.data?.message ||
@@ -459,11 +517,10 @@ export default function RegisterVolunteer() {
     }
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Refresh locations
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // REFRESH LOCATIONS
+  // =========================================================
+
   const handleRefreshLocations = async () => {
     setSelectedLga("");
     setSelectedWard("");
@@ -471,19 +528,20 @@ export default function RegisterVolunteer() {
 
     setWards([]);
     setPollingUnits([]);
+
     setSelectedPollingUnitData(null);
+    setLocationError("");
 
     await loadLGAs();
   };
 
-  /*
-   * ---------------------------------------------------------
-   * Success View
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // SUCCESS VIEW
+  // =========================================================
+
   if (result) {
     const membershipCardUrl = result?.id_card
-      ? `https://ex-igp-adamu-backend-production.up.railway.app/uploads/cards/${result.id_card
+      ? `${API_BASE_URL}/uploads/cards/${result.id_card
           .split("/")
           .pop()}`
       : "";
@@ -555,7 +613,11 @@ export default function RegisterVolunteer() {
                 <button
                   type="button"
                   onClick={() =>
-                    window.open(membershipCardUrl, "_blank")
+                    window.open(
+                      membershipCardUrl,
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
                   }
                   className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-6 py-3 rounded-xl transition shadow-lg"
                 >
@@ -570,11 +632,10 @@ export default function RegisterVolunteer() {
     );
   }
 
-  /*
-   * ---------------------------------------------------------
-   * Classes
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // CLASSES
+  // =========================================================
+
   const inputClasses =
     "w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition placeholder:text-gray-400 text-gray-700";
 
@@ -586,13 +647,13 @@ export default function RegisterVolunteer() {
 
   const selectedIsFull =
     selectedPollingUnitData &&
-    String(selectedPollingUnitData.status).toUpperCase() === "FULL";
+    String(selectedPollingUnitData.status).toUpperCase() ===
+      "FULL";
 
-  /*
-   * ---------------------------------------------------------
-   * Form View
-   * ---------------------------------------------------------
-   */
+  // =========================================================
+  // FORM VIEW
+  // =========================================================
+
   return (
     <div
       className="min-h-screen bg-cover bg-center bg-fixed py-10"
@@ -600,12 +661,14 @@ export default function RegisterVolunteer() {
         backgroundImage: "url('/ex-igp-bg.jpg')",
       }}
     >
-      {/* Dark overlay */}
       <div className="bg-black/60 min-h-screen backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 py-10">
-          {/* Main card */}
           <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden border border-white/30">
-            {/* Header */}
+
+            {/* =================================================
+                HEADER
+            ================================================== */}
+
             <div className="bg-linear-to-r from-green-900 via-green-700 to-green-900 text-white text-center p-10 relative">
               <img
                 src="/logo.png"
@@ -626,20 +689,26 @@ export default function RegisterVolunteer() {
               </p>
             </div>
 
-            {/* Form Body */}
+            {/* =================================================
+                FORM
+            ================================================== */}
+
             <form
               onSubmit={handleSubmit}
               className="p-8 md:p-10 space-y-10"
             >
-              {/* =====================================================
+              {/* =================================================
                   PERSONAL INFORMATION
-              ====================================================== */}
+              ================================================== */}
+
               <section>
                 <h2 className={sectionHeaderClasses}>
-                  <span>👤</span> Personal Information
+                  <span>👤</span>
+                  Personal Information
                 </h2>
 
                 <div className="grid md:grid-cols-2 gap-6">
+                  {/* Full Name */}
                   <div>
                     <label className={labelClasses}>
                       Full Name
@@ -655,6 +724,7 @@ export default function RegisterVolunteer() {
                     />
                   </div>
 
+                  {/* Phone */}
                   <div>
                     <label className={labelClasses}>
                       Phone Number
@@ -670,6 +740,7 @@ export default function RegisterVolunteer() {
                     />
                   </div>
 
+                  {/* Gender */}
                   <div>
                     <label className={labelClasses}>
                       Gender
@@ -691,6 +762,7 @@ export default function RegisterVolunteer() {
                     </select>
                   </div>
 
+                  {/* Age */}
                   <div>
                     <label className={labelClasses}>
                       Age
@@ -711,9 +783,10 @@ export default function RegisterVolunteer() {
                 </div>
               </section>
 
-              {/* =====================================================
+              {/* =================================================
                   LOCATION INFORMATION
-              ====================================================== */}
+              ================================================== */}
+
               <section>
                 <div className="flex items-center justify-between border-b-2 border-green-200 pb-2 mb-6">
                   <h2
@@ -726,18 +799,28 @@ export default function RegisterVolunteer() {
                   <button
                     type="button"
                     onClick={handleRefreshLocations}
-                    disabled={loadingLGAs}
+                    disabled={
+                      loadingLGAs ||
+                      loadingWards ||
+                      loadingPollingUnits
+                    }
                     className="flex items-center gap-2 text-sm text-green-700 hover:text-green-900 font-semibold disabled:opacity-50"
                   >
                     <RefreshCw
                       className={`w-4 h-4 ${
-                        loadingLGAs ? "animate-spin" : ""
+                        loadingLGAs ||
+                        loadingWards ||
+                        loadingPollingUnits
+                          ? "animate-spin"
+                          : ""
                       }`}
                     />
 
                     Refresh
                   </button>
                 </div>
+
+                {/* Location Error */}
 
                 {locationError && (
                   <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -746,7 +829,11 @@ export default function RegisterVolunteer() {
                 )}
 
                 <div className="grid md:grid-cols-3 gap-6">
-                  {/* LGA */}
+
+                  {/* =================================================
+                      LGA
+                  ================================================== */}
+
                   <div>
                     <label className={labelClasses}>
                       Local Government Area
@@ -774,9 +861,18 @@ export default function RegisterVolunteer() {
                         </option>
                       ))}
                     </select>
+
+                    {!loadingLGAs && lgas.length > 0 && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        {lgas.length} LGAs available
+                      </p>
+                    )}
                   </div>
 
-                  {/* Ward */}
+                  {/* =================================================
+                      WARD
+                  ================================================== */}
+
                   <div>
                     <label className={labelClasses}>
                       Registration Area / Ward
@@ -787,7 +883,9 @@ export default function RegisterVolunteer() {
                       onChange={handleWardChange}
                       className={inputClasses}
                       required
-                      disabled={!selectedLga || loadingWards}
+                      disabled={
+                        !selectedLga || loadingWards
+                      }
                     >
                       <option value="">
                         {!selectedLga
@@ -806,9 +904,20 @@ export default function RegisterVolunteer() {
                         </option>
                       ))}
                     </select>
+
+                    {selectedLga &&
+                      !loadingWards &&
+                      wards.length > 0 && (
+                        <p className="mt-2 text-xs text-gray-500">
+                          {wards.length} wards available
+                        </p>
+                      )}
                   </div>
 
-                  {/* Polling Unit */}
+                  {/* =================================================
+                      POLLING UNIT
+                  ================================================== */}
+
                   <div>
                     <label className={labelClasses}>
                       Polling Unit
@@ -819,7 +928,10 @@ export default function RegisterVolunteer() {
                       onChange={handlePollingUnitChange}
                       className={inputClasses}
                       required
-                      disabled={!selectedWard || loadingPollingUnits}
+                      disabled={
+                        !selectedWard ||
+                        loadingPollingUnits
+                      }
                     >
                       <option value="">
                         {!selectedWard
@@ -843,18 +955,33 @@ export default function RegisterVolunteer() {
                             disabled={isFull}
                           >
                             {unit.pu_name}
+
                             {unit.pu_code
                               ? ` — ${unit.pu_code}`
                               : ""}
-                            {isFull ? " — FULL" : ""}
+
+                            {isFull
+                              ? " — FULL"
+                              : ""}
                           </option>
                         );
                       })}
                     </select>
+
+                    {selectedWard &&
+                      !loadingPollingUnits &&
+                      pollingUnits.length > 0 && (
+                        <p className="mt-2 text-xs text-gray-500">
+                          {pollingUnits.length} polling units available
+                        </p>
+                      )}
                   </div>
                 </div>
 
-                {/* Polling Unit Capacity */}
+                {/* =================================================
+                    POLLING UNIT CAPACITY
+                ================================================== */}
+
                 {selectedPollingUnitData && (
                   <div
                     className={`mt-6 rounded-2xl border p-5 ${
@@ -879,9 +1006,18 @@ export default function RegisterVolunteer() {
                             {selectedPollingUnitData.pu_code}
                           </p>
                         )}
+
+                        {selectedPollingUnitData.pu_location && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            Location:{" "}
+                            {selectedPollingUnitData.pu_location}
+                          </p>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-3 gap-3 text-center">
+                        {/* Target */}
+
                         <div className="bg-white rounded-xl px-4 py-3 shadow-sm">
                           <p className="text-xs text-gray-500">
                             Target
@@ -893,6 +1029,8 @@ export default function RegisterVolunteer() {
                           </p>
                         </div>
 
+                        {/* Registered */}
+
                         <div className="bg-white rounded-xl px-4 py-3 shadow-sm">
                           <p className="text-xs text-gray-500">
                             Registered
@@ -903,6 +1041,8 @@ export default function RegisterVolunteer() {
                               0}
                           </p>
                         </div>
+
+                        {/* Remaining */}
 
                         <div className="bg-white rounded-xl px-4 py-3 shadow-sm">
                           <p className="text-xs text-gray-500">
@@ -937,29 +1077,37 @@ export default function RegisterVolunteer() {
                             : "bg-green-100 text-green-700"
                         }`}
                       >
-                        {selectedIsFull ? "FULL" : "OPEN"}
+                        {selectedIsFull
+                          ? "FULL"
+                          : "OPEN"}
                       </span>
                     </div>
 
                     {selectedIsFull && (
                       <p className="mt-3 text-sm font-medium text-red-700">
-                        This polling unit has reached its registration
-                        capacity. Please select another polling unit.
+                        This polling unit has reached its
+                        registration capacity. Please select
+                        another polling unit.
                       </p>
                     )}
                   </div>
                 )}
               </section>
 
-              {/* =====================================================
+              {/* =================================================
                   EDUCATIONAL INFORMATION
-              ====================================================== */}
+              ================================================== */}
+
               <section>
                 <h2 className={sectionHeaderClasses}>
-                  <span>🎓</span> Educational Information
+                  <span>🎓</span>
+                  Educational Information
                 </h2>
 
                 <div className="grid md:grid-cols-2 gap-6">
+
+                  {/* Highest Qualification */}
+
                   <div>
                     <label className={labelClasses}>
                       Highest Qualification
@@ -975,6 +1123,8 @@ export default function RegisterVolunteer() {
                     />
                   </div>
 
+                  {/* Additional Qualification */}
+
                   <div>
                     <label className={labelClasses}>
                       Additional Qualification
@@ -988,6 +1138,8 @@ export default function RegisterVolunteer() {
                       className={inputClasses}
                     />
                   </div>
+
+                  {/* Specialization */}
 
                   <div className="md:col-span-2">
                     <label className={labelClasses}>
@@ -1005,12 +1157,14 @@ export default function RegisterVolunteer() {
                 </div>
               </section>
 
-              {/* =====================================================
+              {/* =================================================
                   EMPLOYMENT INFORMATION
-              ====================================================== */}
+              ================================================== */}
+
               <section>
                 <h2 className={sectionHeaderClasses}>
-                  <span>💼</span> Employment Information
+                  <span>💼</span>
+                  Employment Information
                 </h2>
 
                 <div className="grid sm:grid-cols-3 gap-4">
@@ -1047,16 +1201,20 @@ export default function RegisterVolunteer() {
                 </div>
               </section>
 
-              {/* =====================================================
+              {/* =================================================
                   ADDITIONAL INFORMATION
-              ====================================================== */}
+              ================================================== */}
+
               <section>
                 <h2 className={sectionHeaderClasses}>
-                  <span>ℹ️</span> Additional Information
+                  <span>ℹ️</span>
+                  Additional Information
                 </h2>
 
                 <div className="grid md:grid-cols-2 gap-8">
+
                   {/* Physically Challenged */}
+
                   <div>
                     <label className={labelClasses}>
                       Are You Physically Challenged?
@@ -1102,6 +1260,7 @@ export default function RegisterVolunteer() {
                   </div>
 
                   {/* Youth Organization */}
+
                   <div>
                     <label className={labelClasses}>
                       Are You a Member of any Youth Organization?
@@ -1147,6 +1306,8 @@ export default function RegisterVolunteer() {
                   </div>
                 </div>
 
+                {/* Youth Organization Details */}
+
                 {form.youth_org_member && (
                   <div className="mt-6 bg-green-50/80 border border-green-200 rounded-xl p-5">
                     <h3 className="font-semibold text-green-800 mb-4">
@@ -1154,6 +1315,9 @@ export default function RegisterVolunteer() {
                     </h3>
 
                     <div className="grid md:grid-cols-2 gap-6">
+
+                      {/* Organization Name */}
+
                       <div>
                         <label className={labelClasses}>
                           Organization Name
@@ -1167,6 +1331,8 @@ export default function RegisterVolunteer() {
                           className={inputClasses}
                         />
                       </div>
+
+                      {/* Position */}
 
                       <div>
                         <label className={labelClasses}>
@@ -1186,12 +1352,14 @@ export default function RegisterVolunteer() {
                 )}
               </section>
 
-              {/* =====================================================
+              {/* =================================================
                   EXPECTATIONS
-              ====================================================== */}
+              ================================================== */}
+
               <section>
                 <h2 className={sectionHeaderClasses}>
-                  <span>💬</span> Expectations
+                  <span>💬</span>
+                  Expectations
                 </h2>
 
                 <textarea
@@ -1204,20 +1372,27 @@ export default function RegisterVolunteer() {
                 />
               </section>
 
-              {/* =====================================================
-                  PASSPORT
-              ====================================================== */}
+              {/* =================================================
+                  PASSPORT PHOTOGRAPH
+              ================================================== */}
+
               <section>
                 <h2 className={sectionHeaderClasses}>
-                  <span>📸</span> Passport Photograph
+                  <span>📸</span>
+                  Passport Photograph
                 </h2>
 
                 <div className="flex flex-col sm:flex-row items-start gap-6">
+
                   <label className="relative cursor-pointer bg-gray-50 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl p-6 flex flex-col items-center justify-center transition flex-1">
                     <Upload className="w-8 h-8 text-gray-400 mb-2" />
 
                     <span className="text-sm text-gray-500">
                       Click to upload
+                    </span>
+
+                    <span className="text-xs text-gray-400 mt-1">
+                      JPG, PNG or other image
                     </span>
 
                     <input
@@ -1239,10 +1414,12 @@ export default function RegisterVolunteer() {
                 </div>
               </section>
 
-              {/* =====================================================
+              {/* =================================================
                   FOOTER / SUBMIT
-              ====================================================== */}
+              ================================================== */}
+
               <div className="border-t pt-8 space-y-6">
+
                 <p className="text-center text-sm text-gray-500">
                   For inquiries:{" "}
                   <a
@@ -1251,7 +1428,9 @@ export default function RegisterVolunteer() {
                   >
                     exigpadamuyouthvolunteers@gmail.com
                   </a>
+
                   <br />
+
                   08038830497&nbsp;&nbsp;
                   08023000799&nbsp;&nbsp;
                   08061913134
