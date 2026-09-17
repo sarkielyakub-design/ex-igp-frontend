@@ -509,19 +509,85 @@ export default function Volunteers() {
    * ============================================================
    */
 
+  // =========================================================
+  // PUBLIC FILE URL HELPER
+  // =========================================================
+  // Backend file fields can contain either a public URL or a
+  // server filesystem path such as:
+  //
+  //   /app/app/uploads/passports/EIAYV-NS-000001.jpeg
+  //   /app/app/uploads/cards/EIAYV-NS-000001-membership-card.pdf
+  //
+  // The browser must NEVER request /app/app/... directly.
+  // Convert every local upload path into the public /uploads/ URL.
+  // =========================================================
+
   const getImageUrl = (path) => {
     if (!path) return "";
 
+    const rawPath = String(path).trim();
+
+    // Already a complete public URL.
     if (
-      path.startsWith("http://") ||
-      path.startsWith("https://")
+      rawPath.startsWith("http://") ||
+      rawPath.startsWith("https://")
     ) {
-      return path;
+      return rawPath;
     }
 
-    return `https://ex-igp-adamu-backend-production.up.railway.app/${String(
-      path
-    ).replace(/^\/+/, "")}`;
+    // Remove any backend filesystem prefix and normalize slashes.
+    const normalizedPath = rawPath.replace(/\\/g, "/");
+
+    // If the backend returned a filesystem path containing
+    // /uploads/, keep only the public portion.
+    const uploadsIndex = normalizedPath.indexOf("/uploads/");
+
+    if (uploadsIndex !== -1) {
+      return `${API_BASE_URL}${normalizedPath.substring(
+        uploadsIndex
+      )}`;
+    }
+
+    // If it is already a relative uploads path.
+    if (normalizedPath.startsWith("uploads/")) {
+      return `${API_BASE_URL}/${normalizedPath}`;
+    }
+
+    if (normalizedPath.startsWith("/uploads/")) {
+      return `${API_BASE_URL}${normalizedPath}`;
+    }
+
+    // Fallback for other relative paths.
+    return `${API_BASE_URL}/${normalizedPath.replace(/^\/+/, "")}`;
+  };
+
+  // =========================================================
+  // MEMBERSHIP CARD URL
+  // =========================================================
+  // Always expose membership cards through the public static
+  // route, regardless of the filesystem path returned by backend.
+  // =========================================================
+
+  const getMembershipCardUrl = (path) => {
+    if (!path) return "";
+
+    const rawPath = String(path).trim();
+
+    if (
+      rawPath.startsWith("http://") ||
+      rawPath.startsWith("https://")
+    ) {
+      return rawPath;
+    }
+
+    const normalizedPath = rawPath.replace(/\\/g, "/");
+    const filename = normalizedPath.split("/").pop();
+
+    if (!filename) return "";
+
+    return `${API_BASE_URL}/uploads/cards/${encodeURIComponent(
+      filename
+    )}`;
   };
 
   /*
@@ -1535,7 +1601,7 @@ export default function Volunteers() {
                                 </button>
 
                                 <a
-                                  href={getImageUrl(
+                                  href={getMembershipCardUrl(
                                     v.id_card
                                   )}
                                   download
@@ -1734,7 +1800,7 @@ export default function Volunteers() {
                           </button>
 
                           <a
-                            href={getImageUrl(
+                            href={getMembershipCardUrl(
                               v.id_card
                             )}
                             download
@@ -2164,7 +2230,7 @@ export default function Volunteers() {
                         <button
                           onClick={() =>
                             window.open(
-                              getImageUrl(
+                              getMembershipCardUrl(
                                 selectedVolunteer.id_card
                               ),
                               "_blank"
