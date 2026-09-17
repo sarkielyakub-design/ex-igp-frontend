@@ -22,9 +22,10 @@ import Navbar from "../components/Navbar";
 import api from "../services/Api";
 import exIgpBackground from "../assets/ex-igp-bg.jpg";
 
-const API_BASE_URL =
+const API_BASE_URL = (
   import.meta.env.VITE_API_URL ||
-  "https://ex-igp-adamu-backend-production.up.railway.app";
+  "https://ex-igp-adamu-backend-production.up.railway.app"
+).replace(/\/+$/, "");
 
 export default function Volunteers() {
   const [volunteers, setVolunteers] = useState([]);
@@ -213,20 +214,14 @@ export default function Volunteers() {
         ? volRes.data.volunteers
         : [];
 
-      // Normalize API variants without changing the stored records.
       const normalizedVolunteers = volunteerData.map((v) => ({
         ...v,
-        passport:
-          v?.passport_url ||
-          v?.passport ||
-          null,
-        qr_code:
-          v?.qr_code_url ||
-          v?.qr_code ||
-          null,
+        passport: v?.passport_url || v?.passport || null,
+        qr_code: v?.qr_code_url || v?.qr_code || null,
         id_card:
           v?.id_card_url ||
           v?.membership_card_download_url ||
+          v?.card_download_url ||
           v?.id_card ||
           null,
       }));
@@ -436,8 +431,7 @@ export default function Volunteers() {
           (pu) =>
             String(pu.id || "") ===
               String(pollingUnitFilter) ||
-            String(pu.name || "").toLowerCase() ===
-              String(pollingUnitFilter).toLowerCase()
+            pu.name === pollingUnitFilter
         );
 
       const matchesPollingUnit =
@@ -549,202 +543,111 @@ export default function Volunteers() {
   // Convert every local upload path into the public /uploads/ URL.
   // =========================================================
 
-  // =========================================================
-  // PUBLIC MEDIA URL HELPERS
-  // =========================================================
-  // The backend may return:
-  //   - https://.../uploads/...
-  //   - /uploads/...
-  //   - uploads/...
-  //   - /app/app/uploads/...
-  //   - app/app/uploads/...
-  //
-  // The browser must always receive a public backend URL.
-  // =========================================================
-
   const getImageUrl = (path) => {
     if (!path) return "";
 
     const rawPath = String(path).trim();
-    if (!rawPath) return "";
 
-    // Already a public URL.
-    if (/^https?:\/\//i.test(rawPath)) {
+    // Already a complete public URL.
+    if (
+      rawPath.startsWith("http://") ||
+      rawPath.startsWith("https://")
+    ) {
       return rawPath;
     }
 
-    const normalized = rawPath.replace(/\\\\/g, "/");
+    // Remove any backend filesystem prefix and normalize slashes.
+    const normalizedPath = rawPath.replace(/\\/g, "/");
 
-    // Keep only the public /uploads/... part when a filesystem
-    // path such as /app/app/uploads/... is returned.
-    const uploadsIndex = normalized.toLowerCase().indexOf("/uploads/");
+    // If the backend returned a filesystem path containing
+    // /uploads/, keep only the public portion.
+    const uploadsIndex = normalizedPath.indexOf("/uploads/");
+
     if (uploadsIndex !== -1) {
-      return `${API_BASE_URL}${normalized.substring(uploadsIndex)}`;
+      return `${API_BASE_URL}${normalizedPath.substring(
+        uploadsIndex
+      )}`;
     }
 
-    if (normalized.toLowerCase().startsWith("uploads/")) {
-      return `${API_BASE_URL}/${normalized}`;
+    // If it is already a relative uploads path.
+    if (normalizedPath.startsWith("uploads/")) {
+      return `${API_BASE_URL}/${normalizedPath}`;
     }
 
-    if (normalized.toLowerCase().startsWith("/uploads/")) {
-      return `${API_BASE_URL}${normalized}`;
+    if (normalizedPath.startsWith("/uploads/")) {
+      return `${API_BASE_URL}${normalizedPath}`;
     }
 
-    // Some API versions may return a complete backend-relative
-    // endpoint rather than an upload path.
-    if (normalized.startsWith("/api/")) {
-      return `${API_BASE_URL}${normalized}`;
-    }
-
-    return `${API_BASE_URL}/${normalized.replace(/^\/+/, "")}`;
+    // Fallback for other relative paths.
+    return `${API_BASE_URL}/${normalizedPath.replace(/^\/+/, "")}`;
   };
 
-  const getPassportUrl = (volunteer) =>
-    getImageUrl(
-      volunteer?.passport_url ||
-      volunteer?.passport ||
-      ""
-    );
-
-  const getQrUrl = (volunteer) =>
-    getImageUrl(
-      volunteer?.qr_code_url ||
-      volunteer?.qr_code ||
-      ""
-    );
-
   // =========================================================
-  // MEMBERSHIP CARD
+  // MEMBERSHIP CARD URL
   // =========================================================
-  // Prefer the explicit card URL returned by the backend.
-  // Otherwise use the stored id_card path.
-  // If there is no stored path, use the reliable backend
-  // regeneration/download endpoint based on registration_no.
+  // Always expose membership cards through the public static
+  // route, regardless of the filesystem path returned by backend.
   // =========================================================
 
   const getMembershipCardUrl = (volunteerOrPath) => {
     const volunteer =
-      volunteerOrPath &&
-      typeof volunteerOrPath === "object"
+      volunteerOrPath && typeof volunteerOrPath === "object"
         ? volunteerOrPath
         : null;
 
     const path = volunteer
-      ? (
-          volunteer.id_card_url ||
-          volunteer.membership_card_download_url ||
-          volunteer.id_card ||
-          ""
-        )
+      ? volunteer.id_card_url ||
+        volunteer.membership_card_download_url ||
+        volunteer.card_download_url ||
+        volunteer.id_card ||
+        ""
       : volunteerOrPath;
 
     if (path) {
       const rawPath = String(path).trim();
+      if (/^https?:\/\//i.test(rawPath)) return rawPath;
 
-      if (/^https?:\/\//i.test(rawPath)) {
-        return rawPath;
-      }
-
-      const normalized = rawPath.replace(/\\\\/g, "/");
-      const uploadsIndex = normalized.toLowerCase().indexOf("/uploads/");
-
+      const normalizedPath = rawPath.replace(/\\/g, "/");
+      const uploadsIndex = normalizedPath.toLowerCase().indexOf("/uploads/");
       if (uploadsIndex !== -1) {
-        return `${API_BASE_URL}${normalized.substring(uploadsIndex)}`;
+        return `${API_BASE_URL}${normalizedPath.substring(uploadsIndex)}`;
       }
-
-      if (normalized.toLowerCase().startsWith("uploads/")) {
-        return `${API_BASE_URL}/${normalized}`;
+      if (normalizedPath.toLowerCase().startsWith("uploads/")) {
+        return `${API_BASE_URL}/${normalizedPath}`;
       }
-
-      if (normalized.toLowerCase().startsWith("/uploads/")) {
-        return `${API_BASE_URL}${normalized}`;
+      if (normalizedPath.toLowerCase().startsWith("/uploads/")) {
+        return `${API_BASE_URL}${normalizedPath}`;
       }
     }
 
-    const registrationNo =
-      volunteer?.registration_no ||
-      "";
-
-    if (registrationNo) {
-      return `${API_BASE_URL}/api/volunteers/membership-card/${encodeURIComponent(
-        registrationNo
-      )}`;
-    }
-
-    return "";
+    const registrationNo = volunteer?.registration_no || "";
+    return registrationNo
+      ? `${API_BASE_URL}/api/volunteers/membership-card/${encodeURIComponent(registrationNo)}`
+      : "";
   };
 
   const downloadMembershipCard = async (volunteer) => {
     const registrationNo = volunteer?.registration_no;
-
     if (!registrationNo) {
       alert("This volunteer has no registration number.");
       return;
     }
 
-    const url = getMembershipCardUrl(volunteer);
-
-    if (!url) {
-      alert("Membership card URL could not be created.");
-      return;
-    }
-
+    const endpoint = `/api/volunteers/membership-card/${encodeURIComponent(registrationNo)}`;
     try {
-      // The API membership-card endpoint regenerates a missing card.
-      // Use fetch for the API endpoint so the browser downloads the
-      // actual PDF rather than navigating to an HTML error page.
-      if (url.includes("/api/volunteers/membership-card/")) {
-        const response = await api.get(
-          `/api/volunteers/membership-card/${encodeURIComponent(
-            registrationNo
-          )}`,
-          { responseType: "blob" }
-        );
-
-        const blob = new Blob(
-          [response.data],
-          { type: "application/pdf" }
-        );
-
-        const blobUrl = window.URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = blobUrl;
-        anchor.download =
-          `${registrationNo}-membership-card.pdf`;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        window.URL.revokeObjectURL(blobUrl);
-        return;
-      }
-
-      // For a directly hosted PDF, let the browser download it.
+      const response = await api.get(endpoint, { responseType: "blob" });
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const blobUrl = window.URL.createObjectURL(blob);
       const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download =
-        `${registrationNo}-membership-card.pdf`;
-      anchor.target = "_blank";
-      anchor.rel = "noopener noreferrer";
+      anchor.href = blobUrl;
+      anchor.download = `${registrationNo}-membership-card.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
     } catch (error) {
-      console.error(
-        "Membership card download error:",
-        error?.response?.data || error
-      );
-
-      // Last fallback: open the backend endpoint directly.
-      const fallbackUrl =
-        `${API_BASE_URL}/api/volunteers/membership-card/${encodeURIComponent(
-          registrationNo
-        )}`;
-
-      window.open(
-        fallbackUrl,
-        "_blank",
-        "noopener,noreferrer"
-      );
+      console.error("Membership card download error:", error?.response?.data || error);
+      window.open(`${API_BASE_URL}${endpoint}`, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -754,56 +657,10 @@ export default function Volunteers() {
       alert("This volunteer has no registration number.");
       return;
     }
-
-    const url = getMembershipCardUrl(volunteer);
-
-    if (url.includes("/api/volunteers/membership-card/")) {
-      window.open(
-        url,
-        "_blank",
-        "noopener,noreferrer"
-      );
-      return;
-    }
-
-    if (url) {
-      window.open(
-        url,
-        "_blank",
-        "noopener,noreferrer"
-      );
-    } else {
-      alert("Membership card is not available.");
-    }
-  };
-
-  const VolunteerPhoto = ({
-    volunteer,
-    className,
-    alt = "Volunteer passport",
-  }) => {
-    const [failed, setFailed] = useState(false);
-    const url = getPassportUrl(volunteer);
-
-    if (!url || failed) {
-      return (
-        <div
-          className={`${className || ""} flex items-center justify-center bg-gray-200 text-gray-500`}
-          title="Passport image unavailable"
-        >
-          <Users className="h-6 w-6 opacity-50" />
-        </div>
-      );
-    }
-
-    return (
-      <img
-        src={url}
-        alt={alt}
-        className={className}
-        loading="lazy"
-        onError={() => setFailed(true)}
-      />
+    window.open(
+      `${API_BASE_URL}/api/volunteers/membership-card/${encodeURIComponent(registrationNo)}`,
+      "_blank",
+      "noopener,noreferrer"
     );
   };
 
@@ -1124,16 +981,12 @@ export default function Volunteers() {
               : ""
           }
 
-          ${
-            getPassportUrl(volunteer)
-              ? `<div>
-                   <img
-                     src="${getPassportUrl(volunteer)}"
-                     alt="Volunteer Passport"
-                   />
-                 </div>`
-              : `<p><strong>Passport:</strong> Not available</p>`
-          }
+          <div>
+            <img
+              src="${getPassportUrl(volunteer)}"
+              alt="Volunteer Passport"
+            />
+          </div>
 
         </body>
       </html>
@@ -1681,10 +1534,12 @@ export default function Volunteers() {
 
                             <td className="p-4">
 
-                              <VolunteerPhoto
-                                volunteer={v}
+                              <img
+                                src={getImageUrl(
+                                  v.passport
+                                )}
+                                alt=""
                                 className="w-10 h-10 rounded-full object-cover border-2 border-white/30"
-                                alt={`${v.name || "Volunteer"} passport`}
                               />
 
                             </td>
@@ -1819,9 +1674,7 @@ export default function Volunteers() {
 
                                 <button
                                   type="button"
-                                  onClick={() =>
-                                    downloadMembershipCard(v)
-                                  }
+                                  onClick={() => downloadMembershipCard(v)}
                                   className="p-2 rounded-lg bg-emerald-600/80 hover:bg-emerald-700 text-white transition"
                                   title="Download membership card"
                                 >
@@ -1891,10 +1744,12 @@ export default function Volunteers() {
 
                         <div className="flex gap-4 items-start">
 
-                          <VolunteerPhoto
-                            volunteer={v}
+                          <img
+                            src={getImageUrl(
+                              v.passport
+                            )}
+                            alt=""
                             className="w-14 h-14 rounded-full object-cover border-2 border-white/30"
-                            alt={`${v.name || "Volunteer"} passport`}
                           />
 
                           <div className="flex-1 min-w-0">
@@ -2016,9 +1871,7 @@ export default function Volunteers() {
 
                           <button
                             type="button"
-                            onClick={() =>
-                              downloadMembershipCard(v)
-                            }
+                            onClick={() => downloadMembershipCard(v)}
                             className="flex-1 bg-emerald-600/80 hover:bg-emerald-700 text-white py-2 rounded-lg text-sm text-center transition"
                           >
 
@@ -2092,24 +1945,24 @@ export default function Volunteers() {
 
                   <div className="shrink-0 flex flex-col items-center">
 
-                    <VolunteerPhoto
-                      volunteer={selectedVolunteer}
+                    <img
+                      src={getImageUrl(
+                        selectedVolunteer.passport
+                      )}
+                      alt=""
                       className="w-40 h-40 md:w-52 md:h-52 rounded-3xl object-cover border-4 border-green-200 shadow-lg"
-                      alt={`${selectedVolunteer.name || "Volunteer"} passport`}
                     />
 
-                    {(selectedVolunteer.qr_code_url ||
-                      selectedVolunteer.qr_code) && (
+                    {selectedVolunteer.qr_code && (
 
                       <div className="mt-4 p-2 bg-white rounded-xl shadow">
 
                         <img
-                          src={getQrUrl(selectedVolunteer)}
+                          src={getImageUrl(
+                            selectedVolunteer.qr_code
+                          )}
                           alt="QR"
                           className="w-24 h-24"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
                         />
 
                         <p className="text-xs text-center mt-1 text-gray-500">
@@ -2418,40 +2271,24 @@ export default function Volunteers() {
 
                     <div className="mt-8 flex flex-wrap gap-3">
 
-                      {/* Download card */}
+                      {/* Membership card */}
 
                       <button
                         type="button"
-                        onClick={() =>
-                          downloadMembershipCard(
-                            selectedVolunteer
-                          )
-                        }
+                        onClick={() => downloadMembershipCard(selectedVolunteer)}
                         className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white px-5 py-2.5 rounded-xl transition shadow-md"
                       >
-
                         <Download className="h-5 w-5" />
-
                         Download Membership Card
-
                       </button>
-
-                      {/* View card */}
 
                       <button
                         type="button"
-                        onClick={() =>
-                          viewMembershipCard(
-                            selectedVolunteer
-                          )
-                        }
+                        onClick={() => viewMembershipCard(selectedVolunteer)}
                         className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-xl transition shadow-md"
                       >
-
                         <Eye className="h-5 w-5" />
-
                         View Card
-
                       </button>
 
                       {/* PDF */}
