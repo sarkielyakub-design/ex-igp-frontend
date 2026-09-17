@@ -22,6 +22,10 @@ import Navbar from "../components/Navbar";
 import api from "../services/Api";
 import exIgpBackground from "../assets/ex-igp-bg.jpg";
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://ex-igp-adamu-backend-production.up.railway.app";
+
 export default function Volunteers() {
   const [volunteers, setVolunteers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2208,7 +2212,7 @@ export default function Volunteers() {
                       {selectedVolunteer.id_card && (
 
                         <a
-                          href={getImageUrl(
+                          href={getMembershipCardUrl(
                             selectedVolunteer.id_card
                           )}
                           download
